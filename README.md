@@ -22,7 +22,7 @@ and chat with them. All it takes is an API key (OpenAI, Anthropic, Google or Mis
 
 ![Settings panel with provider, API key and model](docs/screenshots/settings.png)
 
-▶️ [Watch the demo video](docs/demo.mp4)
+▶️ [Watch the demo video](https://www.youtube.com/watch?v=bBr3PHYTrlA)
 
 ## Running the app
 
