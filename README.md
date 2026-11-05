@@ -8,6 +8,22 @@ and chat with them. All it takes is an API key (OpenAI, Anthropic, Google or Mis
 > **Just want to try it out?** Google offers a free API key for Gemini: generate one in
 > [Google AI Studio](https://aistudio.google.com/apikey), then select Google in the settings.
 
+## Screenshots
+
+**A conversation with its documents.** Drop up to 5 PDFs into a conversation and ask your questions.
+
+![Conversation with a PDF and a structured answer](docs/screenshots/conversation.png)
+
+**Sourced answers.** Every answer cites the pages it relies on and shows the passages that were read.
+
+![Answer with page citations and source passages](docs/screenshots/sourced-answer.png)
+
+**Settings.** Pick a provider, paste your API key and choose a model. The key stays on your computer.
+
+![Settings panel with provider, API key and model](docs/screenshots/settings.png)
+
+▶️ [Watch the demo video](docs/demo.mp4)
+
 ## Running the app
 
 - **Windows**: double-click `start.bat`.
