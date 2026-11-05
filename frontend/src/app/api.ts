@@ -12,7 +12,9 @@ export interface DocumentItem {
   pages: number | null; chunks: number | null;
 }
 export interface Source { n: number; filename: string; page: number; excerpt: string; }
-export interface Message { id: number; role: 'user' | 'assistant'; content: string; sources: Source[]; }
+export interface Message {
+  id: number; role: 'user' | 'assistant'; content: string; sources: Source[]; created_at?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class Api {
