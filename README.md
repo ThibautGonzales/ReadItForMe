@@ -5,6 +5,9 @@
 A local chatbot to ask questions about your PDFs. Create conversations, drop your documents into them,
 and chat with them. All it takes is an API key (OpenAI, Anthropic, Google or Mistral).
 
+> **Just want to try it out?** Google offers a free API key for Gemini: generate one in
+> [Google AI Studio](https://aistudio.google.com/apikey), then select Google in the settings.
+
 ## Running the app
 
 - **Windows**: double-click `start.bat`.
@@ -38,19 +41,3 @@ frontend/                 Angular sources
 
 Current limitations: text PDFs only (no OCR for scanned documents), answers are not streamed,
 at most 5 PDFs and 200 MB of documents per conversation.
-
-## Development
-
-```sh
-# Backend (http://127.0.0.1:8000)
-cd backend && READITFORME_NO_BROWSER=1 uv run readitforme
-
-# Frontend with hot reload (http://localhost:4200, /api proxied to the backend)
-cd frontend && npm install && npx ng serve
-
-# Rebuild the UI served by FastAPI
-cd frontend && npx ng build
-```
-
-Useful variables: `READITFORME_PORT`, `READITFORME_HOST`, `READITFORME_DATA`, `READITFORME_EMBEDDING_MODEL`,
-`READITFORME_MAX_DOCUMENTS` (default 5), `READITFORME_MAX_TOTAL_MB` (default 200).
