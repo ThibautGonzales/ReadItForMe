@@ -1,3 +1,5 @@
+<p align="center"><img src="frontend/public/logo.png" alt="ReadItForMe logo" width="240"></p>
+
 # ReadItForMe
 
 A local chatbot to ask questions about your PDFs. Create conversations, drop your documents into them,

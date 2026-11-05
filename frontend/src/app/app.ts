@@ -5,7 +5,7 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
   selector: 'app-root',
   template: `
     <aside class="sidebar">
-      <div class="brand">📄 ReadItForMe</div>
+      <div class="brand"><img src="logo-icon.png" alt="" width="32" height="32" /> ReadItForMe</div>
       <button class="primary" (click)="newConversation()">+ New conversation</button>
       <ul class="convs">
         @for (c of conversations(); track c.id) {
@@ -83,6 +83,7 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
         </form>
       } @else {
         <div class="welcome">
+          <img class="welcome-logo" src="logo.png" alt="ReadItForMe" />
           <h1>Ask questions about your PDFs</h1>
           <button class="primary" (click)="newConversation()">Create a conversation</button>
         </div>
