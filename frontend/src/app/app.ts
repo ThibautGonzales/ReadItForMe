@@ -230,7 +230,7 @@ export class App implements OnInit {
     });
   }
 
-  /** Rafraîchit la liste tant que des documents sont en cours d'analyse. */
+  /** Refresh the list while documents are still being processed. */
   private watchDocuments() {
     clearInterval(this.poll);
     if (!this.documents().some((d) => d.status === 'processing')) return;
@@ -275,7 +275,7 @@ export class App implements OnInit {
     setTimeout(() => document.querySelector('.messages')?.scrollTo({ top: 1e9, behavior: 'smooth' }));
   }
 
-  // ----- Réglages -----
+  // ----- Settings -----
   openSettings() {
     const s = this.settings();
     this.keyDraft.set('');

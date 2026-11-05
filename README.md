@@ -1,52 +1,52 @@
 # ReadItForMe
 
-Un chatbot local pour poser des questions à vos PDF. Vous créez des conversations, vous y glissez
-vos documents, et vous discutez avec eux. Il suffit d'une clé d'API (OpenAI, Anthropic, Google ou Mistral).
+A local chatbot to ask questions about your PDFs. Create conversations, drop your documents into them,
+and chat with them. All it takes is an API key (OpenAI, Anthropic, Google or Mistral).
 
-## Lancer l'application
+## Running the app
 
-- **Windows** : double-cliquez sur `start.bat`.
-- **macOS / Linux** : `./start.sh`
+- **Windows**: double-click `start.bat`.
+- **macOS / Linux**: `./start.sh`
 
-C'est tout. Au premier lancement, le script installe [uv](https://docs.astral.sh/uv/) s'il manque,
-qui télécharge lui-même Python et les dépendances. Le navigateur s'ouvre ensuite sur
-http://127.0.0.1:8000, où il reste à coller votre clé d'API dans les réglages.
+That's it. On first launch, the script installs [uv](https://docs.astral.sh/uv/) if it is missing,
+and uv downloads Python and the dependencies by itself. The browser then opens on
+http://127.0.0.1:8000, where you only need to paste your API key in the settings.
 
-Le modèle d'embeddings (multilingue, ~220 Mo) se télécharge automatiquement au premier démarrage.
-Il tourne en local sur le processeur, sans Ollama ni carte graphique.
+The embedding model (multilingual, ~220 MB) is downloaded automatically on first start.
+It runs locally on the CPU, with no Ollama and no GPU required.
 
-## Où sont mes données ?
+## Where is my data?
 
-Tout est dans `~/.readitforme` (ou le dossier indiqué par `READITFORME_DATA`) :
-conversations (`app.db`, SQLite), base vectorielle (`chroma/`), PDF déposés (`files/`),
-modèle d'embeddings (`models/`) et réglages (`settings.json`, qui contient la clé d'API).
-La clé ne quitte jamais cet ordinateur, sauf vers le fournisseur choisi, et n'est jamais renvoyée au navigateur.
+Everything lives in `~/.readitforme` (or the folder set by `READITFORME_DATA`):
+conversations (`app.db`, SQLite), vector store (`chroma/`), uploaded PDFs (`files/`),
+embedding model (`models/`) and settings (`settings.json`, which holds the API key).
+The key never leaves this computer, except to reach the selected provider, and is never sent back to the browser.
 
 ## Architecture
 
 ```
-backend/          FastAPI (un seul processus qui sert l'API et l'interface)
-  readitforme/main.py     routes : réglages, conversations, documents, messages
-  readitforme/llm.py      choix du fournisseur via LangChain init_chat_model
-  readitforme/rag.py      lecture PDF (pypdf), découpage, embeddings FastEmbed, Chroma (une collection par conversation)
+backend/                  FastAPI (a single process serving both the API and the UI)
+  readitforme/main.py     routes: settings, conversations, documents, messages
+  readitforme/llm.py      provider selection through LangChain init_chat_model
+  readitforme/rag.py      PDF reading (pypdf), chunking, FastEmbed embeddings, Chroma (one collection per conversation)
   readitforme/db.py       SQLite
-  readitforme/static/     interface Angular compilée (versionnée pour que l'utilisateur n'ait pas besoin de Node)
-frontend/         sources Angular
+  readitforme/static/     compiled Angular UI (committed so users don't need Node)
+frontend/                 Angular sources
 ```
 
-Limites actuelles : PDF texte uniquement (pas d'OCR pour les scans), réponses non diffusées en streaming.
+Current limitations: text PDFs only (no OCR for scanned documents), answers are not streamed.
 
-## Développement
+## Development
 
 ```sh
 # Backend (http://127.0.0.1:8000)
 cd backend && READITFORME_NO_BROWSER=1 uv run readitforme
 
-# Front avec rechargement à chaud (http://localhost:4200, /api redirigé vers le backend)
+# Frontend with hot reload (http://localhost:4200, /api proxied to the backend)
 cd frontend && npm install && npx ng serve
 
-# Recompiler l'interface servie par FastAPI
+# Rebuild the UI served by FastAPI
 cd frontend && npx ng build
 ```
 
-Variables utiles : `READITFORME_PORT`, `READITFORME_HOST`, `READITFORME_DATA`, `READITFORME_EMBEDDING_MODEL`.
+Useful variables: `READITFORME_PORT`, `READITFORME_HOST`, `READITFORME_DATA`, `READITFORME_EMBEDDING_MODEL`.

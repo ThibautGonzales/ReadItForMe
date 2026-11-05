@@ -1,5 +1,5 @@
 @echo off
-rem Lance ReadItForMe (Windows). Installe uv au besoin ; uv s'occupe de Python et des dependances.
+rem Starts ReadItForMe (Windows). Installs uv if needed; uv takes care of Python and dependencies.
 cd /d "%~dp0"
 where uv >nul 2>nul
 if errorlevel 1 (

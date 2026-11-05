@@ -1,4 +1,4 @@
-"""Lecture des PDF, embeddings locaux (FastEmbed) et base vectorielle embarquée (Chroma)."""
+"""PDF reading, local embeddings (FastEmbed) and embedded vector store (Chroma)."""
 from functools import lru_cache
 from pathlib import Path
 
@@ -13,10 +13,10 @@ splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
 
 @lru_cache
 def embedder():
-    # Import tardif : le chargement d'onnxruntime prend une seconde.
+    # Lazy import: loading onnxruntime takes a second.
     from fastembed import TextEmbedding
 
-    # Le modèle est téléchargé automatiquement dans le dossier de données au premier appel.
+    # The model is downloaded automatically into the data folder on first call.
     return TextEmbedding(model_name=EMBEDDING_MODEL, cache_dir=str(MODELS_DIR))
 
 
@@ -30,7 +30,7 @@ def chroma():
 
 
 def collection(conversation_id: int):
-    # Une collection par conversation.
+    # One collection per conversation.
     return chroma().get_or_create_collection(f"conv_{conversation_id}", metadata={"hnsw:space": "cosine"})
 
 

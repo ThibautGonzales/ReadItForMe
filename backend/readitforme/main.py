@@ -1,4 +1,4 @@
-"""Serveur ReadItForMe : API + interface web dans un seul processus."""
+"""ReadItForMe server: API + web UI in a single process."""
 import json
 import os
 import shutil
@@ -20,7 +20,7 @@ from .llm import PROVIDERS, get_chat_model, guess_provider
 @asynccontextmanager
 async def lifespan(_app):
     init_db()
-    # Prépare le modèle d'embeddings en arrière-plan (téléchargement au premier lancement).
+    # Warm up the embedding model in the background (downloaded on first launch).
     threading.Thread(target=rag.embedder, daemon=True).start()
     yield
 
@@ -28,15 +28,15 @@ async def lifespan(_app):
 app = FastAPI(title="ReadItForMe", lifespan=lifespan)
 STATIC_DIR = Path(__file__).parent / "static"
 
-SYSTEM_PROMPT = """Tu es un assistant qui répond aux questions à partir des documents fournis par l'utilisateur.
-Réponds dans la langue de la question. Appuie-toi uniquement sur les extraits ci-dessous et cite-les
-avec leur numéro, par exemple [1]. Si la réponse ne s'y trouve pas, dis-le simplement.
+SYSTEM_PROMPT = """You are an assistant that answers questions based on the documents provided by the user.
+Answer in the language of the question. Rely only on the excerpts below and cite them
+by their number, for example [1]. If the answer is not in them, simply say so.
 
-Extraits :
+Excerpts:
 {context}"""
 
 
-# ---------- Réglages ----------
+# ---------- Settings ----------
 
 class SettingsIn(BaseModel):
     provider: str | None = None
@@ -51,7 +51,7 @@ def public_settings() -> dict:
         "provider": s.get("provider"),
         "model": s.get("model") or (PROVIDERS[s["provider"]]["default_model"] if s.get("provider") in PROVIDERS else None),
         "has_key": bool(key),
-        "key_hint": f"…{key[-4:]}" if len(key) > 8 else None,  # la clé n'est jamais renvoyée au navigateur
+        "key_hint": f"…{key[-4:]}" if len(key) > 8 else None,  # the key is never sent back to the browser
         "providers": [{"id": k, **{x: v[x] for x in ("label", "default_model")}} for k, v in PROVIDERS.items()],
     }
 
@@ -232,7 +232,7 @@ def send_message(cid: int, body: MessageIn):
     chunks = rag.search(cid, question)
     context = "\n\n".join(
         f"[{i}] ({c['filename']}, p. {c['page']})\n{c['text']}" for i, c in enumerate(chunks, 1)
-    ) or "(aucun document dans cette conversation)"
+    ) or "(no documents in this conversation)"
     messages = [SystemMessage(SYSTEM_PROMPT.format(context=context))]
     messages += [HumanMessage(m["content"]) if m["role"] == "user" else AIMessage(m["content"]) for m in history]
     messages.append(HumanMessage(question))
@@ -255,7 +255,7 @@ def send_message(cid: int, body: MessageIn):
         return message_out(dict(conn.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)).fetchone()))
 
 
-# ---------- Interface web (Angular compilé) ----------
+# ---------- Web UI (compiled Angular) ----------
 
 if STATIC_DIR.exists():
     @app.get("/{path:path}", include_in_schema=False)
@@ -269,7 +269,7 @@ if STATIC_DIR.exists():
 def run() -> None:
     import uvicorn
 
-    host = os.environ.get("READITFORME_HOST", "127.0.0.1")  # local uniquement par défaut
+    host = os.environ.get("READITFORME_HOST", "127.0.0.1")  # local only by default
     port = int(os.environ.get("READITFORME_PORT", "8000"))
     if not os.environ.get("READITFORME_NO_BROWSER"):
         threading.Timer(1.5, lambda: webbrowser.open(f"http://{host}:{port}")).start()

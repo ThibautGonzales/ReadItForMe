@@ -1,7 +1,7 @@
-"""Choix du fournisseur de LLM via LangChain : une clé d'API suffit."""
+"""LLM provider selection through LangChain: an API key is all it takes."""
 from langchain.chat_models import init_chat_model
 
-# Fournisseurs supportés, avec un modèle par défaut (modifiable dans les réglages).
+# Supported providers, each with a default model (can be changed in the settings).
 PROVIDERS = {
     "openai": {"label": "OpenAI", "default_model": "gpt-5-mini", "env": "api_key"},
     "anthropic": {"label": "Anthropic (Claude)", "default_model": "claude-haiku-5-5", "env": "api_key"},
@@ -11,7 +11,7 @@ PROVIDERS = {
 
 
 def guess_provider(api_key: str) -> str | None:
-    """Devine le fournisseur à partir du préfixe de la clé."""
+    """Guess the provider from the key prefix."""
     key = api_key.strip()
     if key.startswith("sk-ant-"):
         return "anthropic"

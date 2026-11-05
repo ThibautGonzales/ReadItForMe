@@ -1,4 +1,4 @@
-"""Chemins et réglages locaux. Tout est stocké dans un seul dossier de données."""
+"""Local paths and settings. Everything is stored in a single data folder."""
 import json
 import os
 from pathlib import Path
@@ -15,7 +15,7 @@ SETTINGS_PATH = DATA_DIR / "settings.json"
 for d in (CHROMA_DIR, FILES_DIR, MODELS_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
-# Modèle d'embeddings multilingue léger (~220 Mo), téléchargé automatiquement au premier lancement.
+# Lightweight multilingual embedding model (~220 MB), downloaded automatically on first launch.
 EMBEDDING_MODEL = os.environ.get(
     "READITFORME_EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 )
@@ -34,6 +34,6 @@ def save_settings(settings: dict) -> None:
     with _lock:
         SETTINGS_PATH.write_text(json.dumps(settings, indent=2), encoding="utf-8")
         try:
-            os.chmod(SETTINGS_PATH, 0o600)  # la clé d'API ne doit être lisible que par l'utilisateur
+            os.chmod(SETTINGS_PATH, 0o600)  # the API key must only be readable by the user
         except OSError:
             pass

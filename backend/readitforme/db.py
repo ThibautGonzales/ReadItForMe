@@ -1,4 +1,4 @@
-"""Stockage des conversations, messages et documents dans SQLite (rien à installer)."""
+"""Conversations, messages and documents stored in SQLite (nothing to install)."""
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -51,7 +51,7 @@ def connect():
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
-        # Un document resté "en cours" après un arrêt brutal ne finira jamais.
+        # A document left "processing" after an unclean shutdown will never finish.
         conn.execute(
             "UPDATE documents SET status='error', error='Traitement interrompu' WHERE status='processing'"
         )

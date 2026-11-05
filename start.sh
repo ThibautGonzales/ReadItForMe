@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Lance ReadItForMe (macOS / Linux). Installe uv au besoin ; uv s'occupe de Python et des dépendances.
+# Starts ReadItForMe (macOS / Linux). Installs uv if needed; uv takes care of Python and dependencies.
 set -e
 cd "$(dirname "$0")"
 if ! command -v uv >/dev/null 2>&1; then
