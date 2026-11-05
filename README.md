@@ -36,7 +36,8 @@ backend/                  FastAPI (a single process serving both the API and the
 frontend/                 Angular sources
 ```
 
-Current limitations: text PDFs only (no OCR for scanned documents), answers are not streamed.
+Current limitations: text PDFs only (no OCR for scanned documents), answers are not streamed,
+at most 5 PDFs and 200 MB of documents per conversation.
 
 ## Development
 
@@ -51,4 +52,5 @@ cd frontend && npm install && npx ng serve
 cd frontend && npx ng build
 ```
 
-Useful variables: `READITFORME_PORT`, `READITFORME_HOST`, `READITFORME_DATA`, `READITFORME_EMBEDDING_MODEL`.
+Useful variables: `READITFORME_PORT`, `READITFORME_HOST`, `READITFORME_DATA`, `READITFORME_EMBEDDING_MODEL`,
+`READITFORME_MAX_DOCUMENTS` (default 5), `READITFORME_MAX_TOTAL_MB` (default 200).

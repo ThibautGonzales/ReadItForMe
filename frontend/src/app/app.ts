@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Api, Conversation, DocumentItem, Message, Settings, Source, errorText } from './api';
+import { Api, Conversation, DocumentItem, Limits, Message, Settings, Source, errorText } from './api';
 import { marked } from 'marked';
 import { Icon } from './icon';
 
@@ -135,13 +135,23 @@ const DAY = 24 * 60 * 60 * 1000;
                 <a (click)="openSettings()">the settings</a>.</div>
             }
 
-            <div class="dropzone" [class.dragging]="dragging()" (dragleave)="dragging.set(false)">
+            <div class="dropzone" [class.dragging]="dragging()" [class.full]="isFull()" (dragleave)="dragging.set(false)">
               <span class="drop-icon"><app-icon name="upload" [size]="20" /></span>
               <div class="drop-text">
-                <strong>Drop your PDFs here to explore them</strong>
-                <small>Add documents to this conversation · PDF only</small>
+                @if (isFull()) {
+                  <strong>This conversation is full</strong>
+                  <small>Remove a document or start a new conversation to add more.</small>
+                } @else {
+                  <strong>Drop your PDFs here to explore them</strong>
+                  <small>Add documents to this conversation · PDF only</small>
+                }
+                @if (limits(); as l) {
+                  <small class="usage">
+                    {{ documents().length }} / {{ l.max_documents }} documents · {{ formatMb(usedBytes()) }} / {{ formatMb(l.max_total_bytes) }}
+                  </small>
+                }
               </div>
-              <button type="button" class="accent-outline" (click)="fileInput.click()"><app-icon name="folder" /> Browse</button>
+              <button type="button" class="accent-outline" [disabled]="isFull()" (click)="fileInput.click()"><app-icon name="folder" /> Browse</button>
               <input #fileInput type="file" accept="application/pdf" multiple hidden (change)="onPick($event)" />
             </div>
 
@@ -233,7 +243,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
         <div class="composer-wrap">
           <form class="composer" (submit)="send($event)">
-            <button type="button" class="icon-btn" title="Add a PDF" (click)="fileInput2.click()"><app-icon name="paperclip" [size]="18" /></button>
+            <button type="button" class="icon-btn" [title]="isFull() ? 'This conversation is full' : 'Add a PDF'" [disabled]="isFull()" (click)="fileInput2.click()"><app-icon name="paperclip" [size]="18" /></button>
             <input #fileInput2 type="file" accept="application/pdf" multiple hidden (change)="onPick($event)" />
             <textarea rows="1" placeholder="Ask a question about your documents…" [value]="draft()"
                       (input)="onDraftInput($event)"
@@ -289,6 +299,13 @@ export class App implements OnInit {
     return s?.providers.find((p) => p.id === s.provider)?.label ?? s?.provider ?? '';
   });
 
+  limits = signal<Limits | null>(null);
+  usedBytes = computed(() => this.documents().reduce((sum, d) => sum + (d.size ?? 0), 0));
+  isFull = computed(() => {
+    const l = this.limits();
+    return !!l && (this.documents().length >= l.max_documents || this.usedBytes() >= l.max_total_bytes);
+  });
+
   docCountLabel = computed(() => {
     const n = this.documents().length;
     return n === 0 ? 'No document' : n === 1 ? '1 document' : `${n} documents`;
@@ -315,7 +332,9 @@ export class App implements OnInit {
 
   async ngOnInit() {
     await this.guard(async () => {
-      this.settings.set(await this.api.getSettings());
+      const [settings, limits] = await Promise.all([this.api.getSettings(), this.api.getLimits()]);
+      this.settings.set(settings);
+      this.limits.set(limits);
       const convs = await this.api.listConversations();
       this.conversations.set(convs);
       if (convs.length) await this.select(convs[0].id);
@@ -328,6 +347,10 @@ export class App implements OnInit {
   }
 
   // ----- Formatting helpers -----
+  formatMb(bytes: number): string {
+    const mb = bytes / (1024 * 1024);
+    return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
+  }
   defaultModelFor(provider: string | null | undefined) {
     return this.settings()?.providers.find((p) => p.id === provider)?.default_model ?? '';
   }
@@ -454,11 +477,34 @@ export class App implements OnInit {
     if (pdfs.length < files.length) this.error.set('Only PDF files are accepted.');
     const id = this.currentId();
     if (!pdfs.length || id === null) return;
+    const limitError = this.checkLimits(pdfs);
+    if (limitError) return this.error.set(limitError);
     this.guard(async () => {
       const created = await this.api.uploadDocuments(id, pdfs);
       this.documents.update((l) => [...l, ...created]);
       this.watchDocuments();
     });
+  }
+
+  /** Same rules as the backend, checked first so the user gets feedback before uploading. */
+  private checkLimits(files: File[]): string | null {
+    const l = this.limits();
+    if (!l) return null;
+    const count = this.documents().length;
+    const left = l.max_documents - count;
+    if (count + files.length > l.max_documents) {
+      return `A conversation can hold at most ${l.max_documents} documents. ` + (left > 0
+        ? `You selected ${files.length}, you can add ${left} more.`
+        : 'Remove a document or start a new conversation to add more.');
+    }
+    const added = files.reduce((sum, f) => sum + f.size, 0);
+    const room = Math.max(l.max_total_bytes - this.usedBytes(), 0);
+    if (added > room) {
+      return `A conversation can hold at most ${this.formatMb(l.max_total_bytes)} of documents. ` + (room > 0
+        ? `These files weigh ${this.formatMb(added)} and only ${this.formatMb(room)} is left.`
+        : 'Remove a document or start a new conversation to add more.');
+    }
+    return null;
   }
 
   removeDoc(d: DocumentItem) {

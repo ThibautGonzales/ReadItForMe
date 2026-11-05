@@ -19,6 +19,12 @@ EMBEDDING_MODEL = os.environ.get(
     "READITFORME_EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 )
 
+# Upload limits, per conversation.
+MAX_DOCUMENTS_PER_CONVERSATION = int(os.environ.get("READITFORME_MAX_DOCUMENTS", "5"))
+MAX_TOTAL_MB_PER_CONVERSATION = int(os.environ.get("READITFORME_MAX_TOTAL_MB", "200"))
+MAX_TOTAL_BYTES_PER_CONVERSATION = MAX_TOTAL_MB_PER_CONVERSATION * 1024 * 1024
+
+
 def load_settings() -> dict:
     if SETTINGS_PATH.exists():
         return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
