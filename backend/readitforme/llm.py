@@ -31,5 +31,5 @@ def get_chat_model(settings: dict):
     key_arg = PROVIDERS[provider]["key_param"]
     # Bounded timeout and retries so a bad model or quota error fails fast instead of hanging.
     return init_chat_model(
-        model, model_provider=provider, temperature=0.2, timeout=60, max_retries=2, **{key_arg: api_key}
+        model, model_provider=provider, timeout=60, max_retries=2, **{key_arg: api_key}
     )
