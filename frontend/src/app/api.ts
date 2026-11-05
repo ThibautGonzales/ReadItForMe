@@ -48,5 +48,5 @@ export class Api {
 }
 
 export function errorText(e: any): string {
-  return e?.error?.detail ?? e?.message ?? 'Erreur inconnue';
+  return e?.error?.detail ?? e?.message ?? 'Unknown error';
 }

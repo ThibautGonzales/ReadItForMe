@@ -3,7 +3,7 @@ rem Starts ReadItForMe (Windows). Installs uv if needed; uv takes care of Python
 cd /d "%~dp0"
 where uv >nul 2>nul
 if errorlevel 1 (
-  echo Installation de uv...
+  echo Installing uv...
   powershell -ExecutionPolicy ByPass -NoProfile -Command "irm https://astral.sh/uv/install.ps1 | iex"
   set "PATH=%USERPROFILE%\.local\bin;%PATH%"
 )

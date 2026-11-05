@@ -53,7 +53,7 @@ def init_db() -> None:
         conn.executescript(SCHEMA)
         # A document left "processing" after an unclean shutdown will never finish.
         conn.execute(
-            "UPDATE documents SET status='error', error='Traitement interrompu' WHERE status='processing'"
+            "UPDATE documents SET status='error', error='Processing interrupted' WHERE status='processing'"
         )
 
 

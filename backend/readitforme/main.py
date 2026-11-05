@@ -27,6 +27,7 @@ async def lifespan(_app):
 
 app = FastAPI(title="ReadItForMe", lifespan=lifespan)
 STATIC_DIR = Path(__file__).parent / "static"
+DEFAULT_TITLE = "New conversation"
 
 SYSTEM_PROMPT = """You are an assistant that answers questions based on the documents provided by the user.
 Answer in the language of the question. Rely only on the excerpts below and cite them
@@ -70,7 +71,7 @@ def put_settings(body: SettingsIn):
             s["provider"] = guess_provider(s["api_key"]) or s.get("provider")
     if body.provider:
         if body.provider not in PROVIDERS:
-            raise HTTPException(400, "Fournisseur inconnu")
+            raise HTTPException(400, "Unknown provider")
         if body.provider != s.get("provider"):
             s.pop("model", None)
         s["provider"] = body.provider
@@ -83,9 +84,9 @@ def put_settings(body: SettingsIn):
 @app.post("/api/settings/test")
 def test_settings():
     try:
-        get_chat_model(load_settings()).invoke("Réponds juste OK.")
+        get_chat_model(load_settings()).invoke("Just reply OK.")
     except Exception as e:
-        raise HTTPException(400, f"Échec de la connexion au modèle : {e}")
+        raise HTTPException(400, f"Could not connect to the model: {e}")
     return {"ok": True}
 
 
@@ -103,7 +104,7 @@ class ConversationIn(BaseModel):
 def get_conversation(conn, cid: int) -> dict:
     row = conn.execute("SELECT * FROM conversations WHERE id=?", (cid,)).fetchone()
     if not row:
-        raise HTTPException(404, "Conversation introuvable")
+        raise HTTPException(404, "Conversation not found")
     return dict(row)
 
 
@@ -118,7 +119,7 @@ def create_conversation(body: ConversationIn):
     with connect() as conn:
         cur = conn.execute(
             "INSERT INTO conversations (title, created_at) VALUES (?, ?)",
-            (body.title or "Nouvelle conversation", now()),
+            (body.title or DEFAULT_TITLE, now()),
         )
         return get_conversation(conn, cur.lastrowid)
 
@@ -127,7 +128,7 @@ def create_conversation(body: ConversationIn):
 def rename_conversation(cid: int, body: ConversationIn):
     with connect() as conn:
         get_conversation(conn, cid)
-        conn.execute("UPDATE conversations SET title=? WHERE id=?", (body.title or "Sans titre", cid))
+        conn.execute("UPDATE conversations SET title=? WHERE id=?", (body.title or "Untitled", cid))
         return get_conversation(conn, cid)
 
 
@@ -173,7 +174,7 @@ async def upload_documents(cid: int, files: list[UploadFile], tasks: BackgroundT
         for f in files:
             name = Path(f.filename or "document.pdf").name
             if not name.lower().endswith(".pdf"):
-                raise HTTPException(400, f"{name} n'est pas un PDF")
+                raise HTTPException(400, f"{name} is not a PDF")
             cur = conn.execute(
                 "INSERT INTO documents (conversation_id, filename, status, created_at) VALUES (?, ?, 'processing', ?)",
                 (cid, name, now()),
@@ -218,7 +219,7 @@ def list_messages(cid: int):
 def send_message(cid: int, body: MessageIn):
     question = body.content.strip()
     if not question:
-        raise HTTPException(400, "Message vide")
+        raise HTTPException(400, "Empty message")
     with connect() as conn:
         conv = get_conversation(conn, cid)
         history = rows(conn.execute(
@@ -240,7 +241,7 @@ def send_message(cid: int, body: MessageIn):
     try:
         answer = model.invoke(messages).text
     except Exception as e:
-        raise HTTPException(502, f"Erreur du fournisseur de LLM : {e}")
+        raise HTTPException(502, f"LLM provider error: {e}")
 
     sources = [{"n": i, "filename": c["filename"], "page": c["page"], "excerpt": c["text"][:300]}
                for i, c in enumerate(chunks, 1)]
@@ -250,7 +251,7 @@ def send_message(cid: int, body: MessageIn):
         cur = conn.execute(
             "INSERT INTO messages (conversation_id, role, content, sources, created_at) VALUES (?, 'assistant', ?, ?, ?)",
             (cid, answer, json.dumps(sources), now()))
-        if conv["title"] == "Nouvelle conversation":
+        if conv["title"] == DEFAULT_TITLE:
             conn.execute("UPDATE conversations SET title=? WHERE id=?", (question[:60], cid))
         return message_out(dict(conn.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)).fetchone()))
 

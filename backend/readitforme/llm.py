@@ -3,10 +3,10 @@ from langchain.chat_models import init_chat_model
 
 # Supported providers, each with a default model (can be changed in the settings).
 PROVIDERS = {
-    "openai": {"label": "OpenAI", "default_model": "gpt-5-mini", "env": "api_key"},
-    "anthropic": {"label": "Anthropic (Claude)", "default_model": "claude-haiku-5-5", "env": "api_key"},
-    "google_genai": {"label": "Google (Gemini)", "default_model": "gemini-2.5-flash", "env": "google_api_key"},
-    "mistralai": {"label": "Mistral AI", "default_model": "mistral-small-latest", "env": "api_key"},
+    "openai": {"label": "OpenAI", "default_model": "gpt-5-mini", "key_param": "api_key"},
+    "anthropic": {"label": "Anthropic (Claude)", "default_model": "claude-haiku-5-5", "key_param": "api_key"},
+    "google_genai": {"label": "Google (Gemini)", "default_model": "gemini-2.5-flash", "key_param": "google_api_key"},
+    "mistralai": {"label": "Mistral AI", "default_model": "mistral-small-latest", "key_param": "api_key"},
 }
 
 
@@ -26,7 +26,7 @@ def get_chat_model(settings: dict):
     provider = settings.get("provider")
     api_key = settings.get("api_key")
     if provider not in PROVIDERS or not api_key:
-        raise ValueError("Renseignez un fournisseur et une clé d'API dans les réglages.")
+        raise ValueError("Set a provider and an API key in the settings.")
     model = settings.get("model") or PROVIDERS[provider]["default_model"]
-    key_arg = PROVIDERS[provider]["env"]
+    key_arg = PROVIDERS[provider]["key_param"]
     return init_chat_model(model, model_provider=provider, temperature=0.2, **{key_arg: api_key})

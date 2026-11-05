@@ -6,27 +6,27 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
   template: `
     <aside class="sidebar">
       <div class="brand">📄 ReadItForMe</div>
-      <button class="primary" (click)="newConversation()">+ Nouvelle conversation</button>
+      <button class="primary" (click)="newConversation()">+ New conversation</button>
       <ul class="convs">
         @for (c of conversations(); track c.id) {
           <li [class.active]="c.id === currentId()" (click)="select(c.id)">
             <span class="title">{{ c.title }}</span>
             <span class="actions">
-              <button title="Renommer" (click)="rename(c); $event.stopPropagation()">✎</button>
-              <button title="Supprimer" (click)="remove(c); $event.stopPropagation()">🗑</button>
+              <button title="Rename" (click)="rename(c); $event.stopPropagation()">✎</button>
+              <button title="Delete" (click)="remove(c); $event.stopPropagation()">🗑</button>
             </span>
           </li>
         }
       </ul>
-      <button class="ghost" (click)="openSettings()">⚙ Réglages
+      <button class="ghost" (click)="openSettings()">⚙ Settings
         @if (!settings()?.has_key) { <span class="dot"></span> }
       </button>
     </aside>
 
     <main>
       @if (!settings()?.has_key && settings()) {
-        <div class="banner">Pour commencer, renseignez votre clé d'API dans
-          <a (click)="openSettings()">les réglages</a>.</div>
+        <div class="banner">To get started, enter your API key in
+          <a (click)="openSettings()">the settings</a>.</div>
       }
 
       @if (current(); as conv) {
@@ -35,7 +35,7 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
                  (dragleave)="dragging.set(false)"
                  (drop)="onDrop($event)">
           <div class="dropzone" (click)="fileInput.click()">
-            Glissez vos PDF ici ou <u>cliquez pour choisir</u>
+            Drop your PDFs here or <u>click to browse</u>
             <input #fileInput type="file" accept="application/pdf" multiple hidden (change)="onPick($event)" />
           </div>
           <ul class="doclist">
@@ -44,12 +44,12 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
                 <span>{{ d.filename }}</span>
                 <small>
                   @switch (d.status) {
-                    @case ('processing') { analyse… }
+                    @case ('processing') { processing… }
                     @case ('ready') { {{ d.pages }} p. }
-                    @case ('error') { erreur }
+                    @case ('error') { error }
                   }
                 </small>
-                <button title="Retirer" (click)="removeDoc(d)">×</button>
+                <button title="Remove" (click)="removeDoc(d)">×</button>
               </li>
             }
           </ul>
@@ -57,7 +57,7 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
 
         <section class="messages" #scroller>
           @if (messages().length === 0) {
-            <p class="empty">Déposez des documents puis posez une question.</p>
+            <p class="empty">Drop some documents, then ask a question.</p>
           }
           @for (m of messages(); track m.id) {
             <div class="msg" [class]="m.role">
@@ -76,15 +76,15 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
         </section>
 
         <form class="composer" (submit)="send($event)">
-          <textarea rows="2" placeholder="Posez votre question…" [value]="draft()"
+          <textarea rows="2" placeholder="Ask your question…" [value]="draft()"
                     (input)="draft.set($any($event.target).value)"
                     (keydown.enter)="!$any($event).shiftKey && send($event)"></textarea>
-          <button class="primary" [disabled]="sending() || !draft().trim()">Envoyer</button>
+          <button class="primary" [disabled]="sending() || !draft().trim()">Send</button>
         </form>
       } @else {
         <div class="welcome">
-          <h1>Posez vos questions à vos PDF</h1>
-          <button class="primary" (click)="newConversation()">Créer une conversation</button>
+          <h1>Ask questions about your PDFs</h1>
+          <button class="primary" (click)="newConversation()">Create a conversation</button>
         </div>
       }
 
@@ -94,25 +94,25 @@ import { Api, Conversation, DocumentItem, Message, Settings, errorText } from '.
     @if (showSettings()) {
       <div class="overlay" (click)="showSettings.set(false)">
         <form class="dialog" (click)="$event.stopPropagation()" (submit)="saveSettings($event)">
-          <h2>Réglages</h2>
-          <label>Clé d'API
-            <input type="password" autocomplete="off" [placeholder]="settings()?.key_hint ? 'Clé enregistrée ' + settings()?.key_hint : 'Collez votre clé ici'"
+          <h2>Settings</h2>
+          <label>API key
+            <input type="password" autocomplete="off" [placeholder]="settings()?.key_hint ? 'Saved key ' + settings()?.key_hint : 'Paste your key here'"
                    [value]="keyDraft()" (input)="onKeyInput($any($event.target).value)" />
           </label>
-          <label>Fournisseur
+          <label>Provider
             <select (change)="onProviderChange($any($event.target).value)">
-              <option value="" disabled [selected]="!providerDraft()">Choisir…</option>
+              <option value="" disabled [selected]="!providerDraft()">Choose…</option>
               @for (p of settings()?.providers ?? []; track p.id) { <option [value]="p.id" [selected]="p.id === providerDraft()">{{ p.label }}</option> }
             </select>
           </label>
-          <label>Modèle
+          <label>Model
             <input [value]="modelDraft()" [placeholder]="defaultModel()" (input)="modelDraft.set($any($event.target).value)" />
           </label>
-          <p class="hint">La clé reste sur cet ordinateur et n'est jamais renvoyée au navigateur.</p>
+          <p class="hint">Your key stays on this computer and is never sent back to the browser.</p>
           @if (testResult()) { <p class="hint">{{ testResult() }}</p> }
           <div class="row">
-            <button type="button" class="ghost" (click)="testSettings()">Tester</button>
-            <button class="primary">Enregistrer</button>
+            <button type="button" class="ghost" (click)="testSettings()">Test</button>
+            <button class="primary">Save</button>
           </div>
         </form>
       </div>
@@ -177,7 +177,7 @@ export class App implements OnInit {
   }
 
   rename(c: Conversation) {
-    const title = prompt('Nouveau nom', c.title);
+    const title = prompt('New name', c.title);
     if (!title) return;
     this.guard(async () => {
       const updated = await this.api.renameConversation(c.id, title);
@@ -186,7 +186,7 @@ export class App implements OnInit {
   }
 
   remove(c: Conversation) {
-    if (!confirm(`Supprimer « ${c.title} » et ses documents ?`)) return;
+    if (!confirm(`Delete "${c.title}" and its documents?`)) return;
     this.guard(async () => {
       await this.api.deleteConversation(c.id);
       this.conversations.update((l) => l.filter((x) => x.id !== c.id));
@@ -212,7 +212,7 @@ export class App implements OnInit {
 
   private upload(files: File[]) {
     const pdfs = files.filter((f) => f.name.toLowerCase().endsWith('.pdf'));
-    if (pdfs.length < files.length) this.error.set('Seuls les fichiers PDF sont acceptés.');
+    if (pdfs.length < files.length) this.error.set('Only PDF files are accepted.');
     const id = this.currentId();
     if (!pdfs.length || id === null) return;
     this.guard(async () => {
@@ -317,12 +317,12 @@ export class App implements OnInit {
   }
 
   testSettings() {
-    this.testResult.set('Test en cours…');
+    this.testResult.set('Testing…');
     this.guard(async () => {
       await this.persistSettings();
       try {
         await this.api.testSettings();
-        this.testResult.set('✅ Connexion au modèle réussie.');
+        this.testResult.set('✅ Connected to the model.');
       } catch (e) {
         this.testResult.set('❌ ' + errorText(e));
       }

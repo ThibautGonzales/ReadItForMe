@@ -2,7 +2,6 @@
 import json
 import os
 from pathlib import Path
-from threading import Lock
 
 DATA_DIR = Path(os.environ.get("READITFORME_DATA", Path.home() / ".readitforme")).expanduser()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -20,20 +19,15 @@ EMBEDDING_MODEL = os.environ.get(
     "READITFORME_EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 )
 
-_lock = Lock()
-
-
 def load_settings() -> dict:
-    with _lock:
-        if SETTINGS_PATH.exists():
-            return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
-        return {}
+    if SETTINGS_PATH.exists():
+        return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+    return {}
 
 
 def save_settings(settings: dict) -> None:
-    with _lock:
-        SETTINGS_PATH.write_text(json.dumps(settings, indent=2), encoding="utf-8")
-        try:
-            os.chmod(SETTINGS_PATH, 0o600)  # the API key must only be readable by the user
-        except OSError:
-            pass
+    SETTINGS_PATH.write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    try:
+        os.chmod(SETTINGS_PATH, 0o600)  # the API key must only be readable by the user
+    except OSError:
+        pass

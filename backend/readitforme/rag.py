@@ -56,7 +56,7 @@ def ingest_pdf(conversation_id: int, document_id: int, filename: str, path: Path
             texts.append(chunk)
             metas.append({"document_id": document_id, "filename": filename, "page": page_no})
     if not texts:
-        raise EmptyPdfError("Aucun texte trouvé : ce PDF est probablement scanné (OCR non pris en charge).")
+        raise EmptyPdfError("No text found: this PDF is probably scanned (OCR is not supported).")
     col = collection(conversation_id)
     batch = 64
     for i in range(0, len(texts), batch):
