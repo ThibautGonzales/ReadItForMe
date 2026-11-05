@@ -13,7 +13,13 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from . import rag
-from .config import FILES_DIR, load_settings, save_settings
+from .config import (
+    FILES_DIR,
+    MAX_DOCUMENTS_PER_CONVERSATION,
+    MAX_TOTAL_BYTES_PER_CONVERSATION,
+    load_settings,
+    save_settings,
+)
 from .db import connect, init_db, now, rows
 from .llm import PROVIDERS, get_chat_model, guess_provider
 
@@ -177,24 +183,66 @@ def list_documents(cid: int):
         return rows(conn.execute("SELECT * FROM documents WHERE conversation_id=? ORDER BY id", (cid,)))
 
 
+def format_mb(size: int) -> str:
+    mb = size / (1024 * 1024)
+    return f"{mb:.1f} MB" if mb < 10 else f"{mb:.0f} MB"
+
+
+def upload_size(f: UploadFile) -> int:
+    if f.size is not None:
+        return f.size
+    f.file.seek(0, os.SEEK_END)
+    size = f.file.tell()
+    f.file.seek(0)
+    return size
+
+
+@app.get("/api/limits")
+def get_limits():
+    return {"max_documents": MAX_DOCUMENTS_PER_CONVERSATION, "max_total_bytes": MAX_TOTAL_BYTES_PER_CONVERSATION}
+
+
 @app.post("/api/conversations/{cid}/documents")
 async def upload_documents(cid: int, files: list[UploadFile], tasks: BackgroundTasks):
     created = []
     folder = FILES_DIR / str(cid)
-    folder.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         get_conversation(conn, cid)
-        for f in files:
-            name = Path(f.filename or "document.pdf").name
+
+        # Validate the whole batch before writing anything, so an upload is all or nothing.
+        names = [Path(f.filename or "document.pdf").name for f in files]
+        sizes = [upload_size(f) for f in files]
+        for name in names:
             if not name.lower().endswith(".pdf"):
                 raise HTTPException(400, f"{name} is not a PDF")
+        count, used = conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(size), 0) FROM documents WHERE conversation_id=?", (cid,)
+        ).fetchone()
+        max_docs, max_bytes = MAX_DOCUMENTS_PER_CONVERSATION, MAX_TOTAL_BYTES_PER_CONVERSATION
+        if count + len(files) > max_docs:
+            left = max_docs - count
+            detail = f"A conversation can hold at most {max_docs} documents. "
+            detail += (f"You can add {left} more." if left > 0
+                       else "Remove a document or start a new conversation to add more.")
+            raise HTTPException(400, detail)
+        if used + sum(sizes) > max_bytes:
+            left = max(max_bytes - used, 0)
+            detail = f"A conversation can hold at most {format_mb(max_bytes)} of documents. "
+            detail += (f"These files weigh {format_mb(sum(sizes))} and only {format_mb(left)} is left."
+                       if left > 0 else "Remove a document or start a new conversation to add more.")
+            raise HTTPException(413, detail)
+
+        folder.mkdir(parents=True, exist_ok=True)
+        for f, name, size in zip(files, names, sizes):
             cur = conn.execute(
-                "INSERT INTO documents (conversation_id, filename, status, created_at) VALUES (?, ?, 'processing', ?)",
-                (cid, name, now()),
+                "INSERT INTO documents (conversation_id, filename, status, size, created_at)"
+                " VALUES (?, ?, 'processing', ?, ?)",
+                (cid, name, size, now()),
             )
             doc_id = cur.lastrowid
             path = folder / f"{doc_id}.pdf"
-            path.write_bytes(await f.read())
+            with path.open("wb") as out:
+                shutil.copyfileobj(f.file, out)
             tasks.add_task(process_document, cid, doc_id, name, path)
             created.append(dict(conn.execute("SELECT * FROM documents WHERE id=?", (doc_id,)).fetchone()))
     return created

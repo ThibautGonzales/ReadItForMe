@@ -3,7 +3,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from .config import DB_PATH
+from .config import DB_PATH, FILES_DIR
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS conversations (
@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS documents (
     error TEXT,
     pages INTEGER,
     chunks INTEGER,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    size INTEGER
 );
 """
 
@@ -51,6 +52,13 @@ def connect():
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        # Migration: file size in bytes, used to enforce the per-conversation upload limit.
+        columns = {r["name"] for r in conn.execute("PRAGMA table_info(documents)")}
+        if "size" not in columns:
+            conn.execute("ALTER TABLE documents ADD COLUMN size INTEGER")
+        for r in conn.execute("SELECT id, conversation_id FROM documents WHERE size IS NULL").fetchall():
+            path = FILES_DIR / str(r["conversation_id"]) / f"{r['id']}.pdf"
+            conn.execute("UPDATE documents SET size=? WHERE id=?", (path.stat().st_size if path.exists() else 0, r["id"]))
         # A document left "processing" after an unclean shutdown will never finish.
         conn.execute(
             "UPDATE documents SET status='error', error='Processing interrupted' WHERE status='processing'"

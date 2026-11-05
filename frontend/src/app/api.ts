@@ -9,8 +9,9 @@ export interface Settings {
 export interface Conversation { id: number; title: string; created_at: string; }
 export interface DocumentItem {
   id: number; filename: string; status: 'processing' | 'ready' | 'error'; error: string | null;
-  pages: number | null; chunks: number | null;
+  pages: number | null; chunks: number | null; size: number | null;
 }
+export interface Limits { max_documents: number; max_total_bytes: number; }
 export interface Source { n: number; filename: string; page: number; excerpt: string; }
 export interface Message {
   id: number; role: 'user' | 'assistant'; content: string; sources: Source[]; created_at?: string;
@@ -24,6 +25,7 @@ export class Api {
   saveSettings(body: { provider?: string; model?: string; api_key?: string }) {
     return firstValueFrom(this.http.put<Settings>('/api/settings', body));
   }
+  getLimits() { return firstValueFrom(this.http.get<Limits>('/api/limits')); }
   testSettings() { return firstValueFrom(this.http.post<{ ok: boolean }>('/api/settings/test', {})); }
 
   listConversations() { return firstValueFrom(this.http.get<Conversation[]>('/api/conversations')); }

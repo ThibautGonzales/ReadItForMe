@@ -153,6 +153,8 @@ main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: r
 .drop-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .drop-text strong { font-weight: 500; font-size: .95rem; }
 .drop-text small { color: var(--muted); font-size: .8rem; }
+.drop-text .usage { font-variant-numeric: tabular-nums; }
+.dropzone.full { border-style: solid; opacity: .8; }
 
 .doclist { list-style: none; margin: -6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .doclist li { display: flex; align-items: center; gap: 12px; }
